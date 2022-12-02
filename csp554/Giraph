@@ -1,0 +1,82 @@
+# first to install Git and Maven 3
+su - hdadmin
+sudo apt-get install git
+sudo apt-get install maven
+mvn -version
+
+#clone Giraph from Github
+cd /usr/local/
+sudo git clone https://github.com/apache/giraph.git
+sudo chown -R hduser:hadoop giraph
+su - hduser
+
+#edit $HOME/.bashrc
+export GIRAPH_HOME=/usr/local/giraph
+
+#package Giraph into JAR file
+source $HOME/.bashrc
+cd $GIRAPH_HOME
+mvn package -DskipTests
+
+#copy input file
+$HADOOP_HOME/bin/hadoop dfs -copyFromLocal /tmp/tiny_graph.txt /user/hduser/input/tiny_graph.txt
+$HADOOP_HOME/bin/hadoop dfs -ls /user/hduser/input
+
+#use IdWithValueTextOutputFormat output file format
+$HADOOP_HOME/bin/hadoop jar $GIRAPH_HOME/giraph-examples/target/giraph-examples-1.2.0-SNAPSHOT-for-hadoop-0.20.203.0-jar-with-dependencies.jar org.apache.giraph.GiraphRunner org.apache.giraph.examples.SimpleShortestPathsComputation -vif org.apache.giraph.io.formats.JsonLongDoubleFloatDoubleVertexInputFormat -vip /user/hduser/input/tiny_graph.txt -vof org.apache.giraph.io.formats.IdWithValueTextOutputFormat -op /user/hduser/output/shortestpaths -w 1
+
+#get more information about running a Giraph job
+$HADOOP_HOME/bin/hadoop jar $GIRAPH_HOME/giraph-examples/target/giraph-examples-1.2.0-SNAPSHOT-for-hadoop-0.20.203.0-jar-with-dependencies.jar org.apache.giraph.GiraphRunner -h
+
+#sample output
+/*
+usage: org.apache.giraph.utils.ConfigurationUtils [-aw <arg>] [-c <arg>]
+       [-ca <arg>] [-cf <arg>] [-eif <arg>] [-eip <arg>] [-eof <arg>]
+       [-esd <arg>] [-h] [-jyc <arg>] [-la] [-mc <arg>] [-op <arg>] [-pc
+       <arg>] [-q] [-th <arg>] [-ve <arg>] [-vif <arg>] [-vip <arg>] [-vof
+       <arg>] [-vsd <arg>] [-vvf <arg>] [-w <arg>] [-wc <arg>] [-yh <arg>]
+       [-yj <arg>]
+ -aw,--aggregatorWriter <arg>           AggregatorWriter class
+ -c,--messageCombiner <arg>             Message messageCombiner class
+ -ca,--customArguments <arg>            provide custom arguments for the
+                                        job configuration in the form: -ca
+                                        <param1>=<value1>,<param2>=<value2>
+                                        -ca <param3>=<value3> etc. It
+                                        can appear multiple times, and the
+                                        last one has effect for the sameparam.
+ -cf,--cacheFile <arg>                  Files for distributed cache
+ -eif,--edgeInputFormat <arg>           Edge input format
+ -eip,--edgeInputPath <arg>             Edge input path
+ -eof,--vertexOutputFormat <arg>               Edge output format
+ -esd,--edgeSubDir <arg>                subdirectory to be used for the
+                                        edge output
+ -h,--help                              Help
+ -jyc,--jythonClass <arg>               Jython class name, used if
+                                        computation passed in is a python
+                                        script
+ -la,--listAlgorithms                   List supported algorithms
+ -mc,--masterCompute <arg>              MasterCompute class
+ -op,--outputPath <arg>                 Vertex output path
+ -pc,--partitionClass <arg>             Partition class
+ -q,--quiet                             Quiet output
+ -th,--typesHolder <arg>                Class that holds types. Needed
+                                        only if Computation is not set
+ -ve,--outEdges <arg>                   Vertex edges class
+ -vif,--vertexInputFormat <arg>         Vertex input format
+ -vip,--vertexInputPath <arg>           Vertex input path
+ -vof,--vertexOutputFormat <arg>        Vertex output format
+ -vsd,--vertexSubDir <arg>              subdirectory to be used for the
+                                        vertex output
+ -vvf,--vertexValueFactoryClass <arg>   Vertex value factory class
+ -w,--workers <arg>                     Number of workers
+ -wc,--workerContext <arg>              WorkerContext class
+ -yh,--yarnheap <arg>                   Heap size, in MB, for each Giraph
+                                        task (YARN only.) Defaults to
+                                        giraph.yarn.task.heap.mb => 1024
+                                        (integer) MB.
+ -yj,--yarnjars <arg>                   comma-separated list of JAR
+                                        filenames to distribute to Giraph
+                                        tasks and ApplicationMaster. YARN
+                                        only. Search order: CLASSPATH,
+                                        HADOOP_HOME, user current dir.
+ */
